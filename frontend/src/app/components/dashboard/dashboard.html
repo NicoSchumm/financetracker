@@ -1,0 +1,63 @@
+<div class="dashboard">
+  <header class="dashboard-header">
+    <h1>Finanztracker</h1>
+    <p>Übersicht deiner Finanzen</p>
+  </header>
+
+  <div class="dashboard-content">
+    <!-- Transaction Form -->
+    <section class="form-section">
+      <app-transaction-form 
+        (transactionAdded)="onTransactionAdded()">
+      </app-transaction-form>
+    </section>
+
+    <!-- Chart Section -->
+    <section class="chart-section" *ngIf="chartData.length > 0">
+      <h2>Finanzübersicht</h2>
+      <ngx-charts-bar-vertical
+        [results]="chartData"
+        [view]="view"
+        [showXAxisLabel]="true"
+        [showYAxisLabel]="true"
+        xAxisLabel="Kategorie"
+        yAxisLabel="Betrag (€)"
+        [animations]="true">
+      </ngx-charts-bar-vertical>
+    </section>
+
+    <!-- Transactions List -->
+    <section class="transactions-section" *ngIf="transactions.length > 0">
+      <h2>Letzte Transaktionen</h2>
+      <div class="transactions-list">
+        <div 
+          *ngFor="let transaction of transactions.slice(-10); trackBy: trackByTransactionId" 
+          class="transaction-item"
+          [class.income]="transaction.type === 'income'"
+          [class.expense]="transaction.type === 'expense'">
+          
+          <div class="transaction-info">
+            <span class="description">{{ transaction.description }}</span>
+            <span class="date">{{ transaction.date | date:'dd.MM.yyyy' }}</span>
+          </div>
+          
+          <div class="transaction-amount">
+            <span class="amount">
+              {{ transaction.type === 'income' ? '+' : '-' }}{{ transaction.amount | currency:'EUR':'symbol':'1.2-2':'de' }}
+            </span>
+            <span class="type">{{ transaction.type === 'income' ? 'Einnahme' : 'Ausgabe' }}</span>
+          </div>
+
+          <div class="transaction-actions">
+            <button 
+              class="delete-btn" 
+              (click)="deleteTransaction(transaction.id!)"
+              title="Transaktion löschen">
+              ❌
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
