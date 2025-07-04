@@ -59,7 +59,7 @@ Finanztracker/
 
 ### 1. Repository klonen
 ```bash
-git clone https://github.com/DEINUSERNAME/finanztracker.git
+git clone https://github.com/NicoSchumm/finanztracker.git
 cd finanztracker
 ```
 
@@ -105,7 +105,7 @@ ng serve
 - [ ] 🔍 Filter und Suche
 - [ ] 📊 Export-Funktionalität (CSV/PDF)
 - [ ] 📱 PWA Features für Mobile App
-- [ ] 🌙 Dunkles Theme
+- [ ] 🌙 Dark Theme
 - [ ] 💱 Mehrere Währungen
 - [ ] 💰 Budgets und Limits
 - [ ] 📈 Erweiterte Charts (Pie, Line)
