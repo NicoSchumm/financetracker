@@ -1,68 +1,65 @@
-import { Component, EventEmitter, OnInit, Output } from '@angular/core';
+import { Component, EventEmitter, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../services/api';
-import { Transaction } from '../../models/transaction.interface';
 
 @Component({
   selector: 'app-transaction-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, FormsModule],
   templateUrl: './transaction-form.html',
-  styleUrls: ['./transaction-form.scss'],
+  styleUrls: ['./transaction-form.scss']
 })
-export class TransactionFormComponent implements OnInit {
+export class TransactionFormComponent {
   @Output() transactionAdded = new EventEmitter<void>();
-  transactionForm!: FormGroup;
+
+  transaction = {
+    description: '',
+    amount: 0,
+    type: 'expense' as 'income' | 'expense',
+    date: new Date().toISOString().split('T')[0]
+  };
+
   isSubmitting = false;
 
-  constructor(
-    private fb: FormBuilder, 
-    private apiService: ApiService
-  ) {}
-
-  ngOnInit(): void {
-    this.initForm();
-  }
-
-  private initForm(): void {
-    this.transactionForm = this.fb.group({
-      description: ['', [Validators.required, Validators.minLength(3)]],
-      amount: ['', [Validators.required, Validators.min(0.01)]],
-      type: ['expense', Validators.required],
-      date: [new Date().toISOString().split('T')[0], Validators.required]
-    });
-  }
+  constructor(private apiService: ApiService) {}
 
   onSubmit(): void {
-    if (this.transactionForm.valid && !this.isSubmitting) {
+    if (this.isValidTransaction()) {
       this.isSubmitting = true;
       
-      const formValue = this.transactionForm.value;
-      const transaction: Omit<Transaction, 'id'> = {
-        description: formValue.description,
-        amount: parseFloat(formValue.amount),
-        type: formValue.type,
-        date: new Date(formValue.date)
+      // Date string zu Date object konvertieren
+      const transactionData = {
+        ...this.transaction,
+        date: new Date(this.transaction.date)
       };
-
-      this.apiService.addTransaction(transaction).subscribe({
+      
+      this.apiService.addTransaction(transactionData).subscribe({
         next: () => {
-          this.transactionForm.reset();
-          this.initForm();
           this.transactionAdded.emit();
+          this.resetForm();
           this.isSubmitting = false;
         },
         error: (error) => {
-          console.error('Fehler beim Speichern:', error);
+          console.error('Fehler beim Hinzufügen:', error);
+          alert('Fehler beim Hinzufügen der Transaktion');
           this.isSubmitting = false;
         }
       });
     }
   }
 
-  get description() { return this.transactionForm.get('description'); }
-  get amount() { return this.transactionForm.get('amount'); }
-  get type() { return this.transactionForm.get('type'); }
-  get date() { return this.transactionForm.get('date'); }
+  private isValidTransaction(): boolean {
+    return this.transaction.description.trim() !== '' && 
+           this.transaction.amount > 0;
+  }
+
+  private resetForm(): void {
+    this.transaction = {
+      description: '',
+      amount: 0,
+      type: 'expense',
+      date: new Date().toISOString().split('T')[0]
+    };
+  }
 }

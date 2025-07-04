@@ -1,96 +1,83 @@
 <div class="transaction-form">
-  <h3>Neue Transaktion</h3>
-  
-  <form [formGroup]="transactionForm" (ngSubmit)="onSubmit()" class="form">
-    <!-- Beschreibung -->
+  <form (ngSubmit)="onSubmit()" #transactionForm="ngForm">
+    
+    <!-- Type Selection -->
+    <div class="form-group type-selection">
+      <div class="type-buttons">
+        <button 
+          type="button"
+          class="type-btn"
+          [class.active]="transaction.type === 'income'"
+          (click)="transaction.type = 'income'">
+          <span class="icon">💰</span>
+          <span>Einnahme</span>
+        </button>
+        
+        <button 
+          type="button"
+          class="type-btn"
+          [class.active]="transaction.type === 'expense'"
+          (click)="transaction.type = 'expense'">
+          <span class="icon">💸</span>
+          <span>Ausgabe</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Description -->
     <div class="form-group">
       <label for="description">Beschreibung</label>
       <input 
+        type="text"
         id="description"
-        type="text" 
-        formControlName="description"
-        class="form-control"
-        [class.error]="description?.invalid && description?.touched"
-        placeholder="z.B. Einkauf, Gehalt..."
-      >
-      @if (description?.invalid && description?.touched) {
-        <div class="error-message">
-          @if (description?.errors?.['required']) {
-            Beschreibung ist erforderlich
-          }
-          @if (description?.errors?.['minlength']) {
-            Mindestens 3 Zeichen erforderlich
-          }
-        </div>
-      }
+        name="description"
+        [(ngModel)]="transaction.description"
+        placeholder="z.B. Einkauf, Gehalt, Miete..."
+        required
+        class="form-input">
     </div>
 
-    <!-- Betrag -->
+    <!-- Amount -->
     <div class="form-group">
       <label for="amount">Betrag (€)</label>
       <input 
+        type="number"
         id="amount"
-        type="number" 
-        formControlName="amount"
-        class="form-control"
-        [class.error]="amount?.invalid && amount?.touched"
+        name="amount"
+        [(ngModel)]="transaction.amount"
         placeholder="0.00"
-        step="0.01"
         min="0"
-      >
-      @if (amount?.invalid && amount?.touched) {
-        <div class="error-message">
-          @if (amount?.errors?.['required']) {
-            Betrag ist erforderlich
-          }
-          @if (amount?.errors?.['min']) {
-            Betrag muss größer als 0 sein
-          }
-        </div>
-      }
+        step="0.01"
+        required
+        class="form-input">
     </div>
 
-    <!-- Typ -->
-    <div class="form-group">
-      <label for="type">Typ</label>
-      <select 
-        id="type"
-        formControlName="type"
-        class="form-control"
-      >
-        <option value="income">Einnahme</option>
-        <option value="expense">Ausgabe</option>
-      </select>
-    </div>
-
-    <!-- Datum -->
+    <!-- Date -->
     <div class="form-group">
       <label for="date">Datum</label>
       <input 
+        type="date"
         id="date"
-        type="date" 
-        formControlName="date"
-        class="form-control"
-        [class.error]="date?.invalid && date?.touched"
-      >
-      @if (date?.invalid && date?.touched) {
-        <div class="error-message">
-          Datum ist erforderlich
-        </div>
-      }
+        name="date"
+        [(ngModel)]="transaction.date"
+        required
+        class="form-input">
     </div>
 
     <!-- Submit Button -->
     <button 
-      type="submit" 
-      class="btn btn-primary"
-      [disabled]="transactionForm.invalid || isSubmitting"
-    >
-      @if (isSubmitting) {
-        Speichern...
-      } @else {
-        Transaktion hinzufügen
-      }
+      type="submit"
+      class="submit-btn"
+      [disabled]="!transactionForm.valid || isSubmitting"
+      [class.loading]="isSubmitting">
+      <span *ngIf="!isSubmitting">
+        {{ transaction.type === 'income' ? '💰 Einnahme hinzufügen' : '💸 Ausgabe hinzufügen' }}
+      </span>
+      <span *ngIf="isSubmitting">
+        <span class="spinner"></span>
+        Wird gespeichert...
+      </span>
     </button>
+
   </form>
 </div>

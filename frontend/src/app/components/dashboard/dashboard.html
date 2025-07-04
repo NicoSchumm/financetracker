@@ -1,63 +1,217 @@
-<div class="dashboard">
+<div class="dashboard" 
+     [class.mobile]="isMobile" 
+     [class.tablet]="isTablet"
+     [class.desktop]="!isMobile && !isTablet">
+
+  <!-- Mobile Header -->
   <header class="dashboard-header">
-    <h1>Finanztracker</h1>
-    <p>Übersicht deiner Finanzen</p>
+    <div class="header-content">
+      <h1>💰 Finanztracker</h1>
+      <p *ngIf="!isMobile">Behalte deine Finanzen im Blick</p>
+    </div>
   </header>
 
-  <div class="dashboard-content">
-    <!-- Transaction Form -->
-    <section class="form-section">
-      <app-transaction-form 
-        (transactionAdded)="onTransactionAdded()">
-      </app-transaction-form>
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="loading-container">
+    <div class="loading-spinner">
+      <div class="spinner"></div>
+      <p>Lade Daten...</p>
+    </div>
+  </div>
+
+  <!-- Mobile Layout -->
+  <div class="mobile-layout" *ngIf="isMobile && !isLoading">
+    
+    <!-- Summary Cards -->
+    <section class="summary-section">
+      <div class="summary-cards">
+        <div class="summary-card balance" 
+             [class.positive]="getBalance() >= 0" 
+             [class.negative]="getBalance() < 0">
+          <div class="card-header">
+            <span class="icon">💰</span>
+            <span class="label">Saldo</span>
+          </div>
+          <div class="amount">{{ getBalance() | currency:'EUR':'symbol':'1.2-2':'de' }}</div>
+        </div>
+        
+        <div class="summary-card income">
+          <div class="card-header">
+            <span class="icon">📈</span>
+            <span class="label">Einnahmen</span>
+          </div>
+          <div class="amount">{{ getTotalIncome() | currency:'EUR':'symbol':'1.2-2':'de' }}</div>
+        </div>
+        
+        <div class="summary-card expense">
+          <div class="card-header">
+            <span class="icon">📉</span>
+            <span class="label">Ausgaben</span>
+          </div>
+          <div class="amount">{{ getTotalExpense() | currency:'EUR':'symbol':'1.2-2':'de' }}</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Chart Toggle -->
+    <section class="chart-toggle-section" *ngIf="chartData.length > 0">
+      <button class="toggle-btn" (click)="toggleChart()">
+        <span class="icon">📊</span>
+        {{ showChart ? 'Chart ausblenden' : 'Chart anzeigen' }}
+      </button>
     </section>
 
     <!-- Chart Section -->
-    <section class="chart-section" *ngIf="chartData.length > 0">
-      <h2>Finanzübersicht</h2>
-      <ngx-charts-bar-vertical
-        [results]="chartData"
-        [view]="view"
-        [showXAxisLabel]="true"
-        [showYAxisLabel]="true"
-        xAxisLabel="Kategorie"
-        yAxisLabel="Betrag (€)"
-        [animations]="true">
-      </ngx-charts-bar-vertical>
+    <section class="mobile-chart-section" *ngIf="showChart && chartData.length > 0">
+      <div class="chart-container">
+        <ngx-charts-bar-vertical
+          [results]="chartData"
+          [view]="view"
+          [showXAxisLabel]="false"
+          [showYAxisLabel]="false"
+          [animations]="true"
+          [gradient]="true"
+          [barPadding]="8"
+          [roundDomains]="true">
+        </ngx-charts-bar-vertical>
+      </div>
     </section>
 
     <!-- Transactions List -->
-    <section class="transactions-section" *ngIf="transactions.length > 0">
-      <h2>Letzte Transaktionen</h2>
-      <div class="transactions-list">
+    <section class="mobile-transactions-section" *ngIf="transactions.length > 0">
+      <div class="section-header">
+        <h2>Transaktionen</h2>
+        <span class="transaction-count">{{ transactions.length }}</span>
+      </div>
+      
+      <div class="mobile-transactions-list">
         <div 
-          *ngFor="let transaction of transactions.slice(-10); trackBy: trackByTransactionId" 
-          class="transaction-item"
+          *ngFor="let transaction of transactions; trackBy: trackByTransactionId" 
+          class="mobile-transaction-item"
           [class.income]="transaction.type === 'income'"
           [class.expense]="transaction.type === 'expense'">
           
-          <div class="transaction-info">
-            <span class="description">{{ transaction.description }}</span>
-            <span class="date">{{ transaction.date | date:'dd.MM.yyyy' }}</span>
-          </div>
-          
-          <div class="transaction-amount">
-            <span class="amount">
-              {{ transaction.type === 'income' ? '+' : '-' }}{{ transaction.amount | currency:'EUR':'symbol':'1.2-2':'de' }}
-            </span>
-            <span class="type">{{ transaction.type === 'income' ? 'Einnahme' : 'Ausgabe' }}</span>
+          <div class="transaction-content">
+            <div class="transaction-icon">
+              {{ getTransactionIcon(transaction.type) }}
+            </div>
+            
+            <div class="transaction-details">
+              <div class="description">{{ transaction.description }}</div>
+              <div class="date">{{ transaction.date | date:'dd.MM.yyyy' }}</div>
+            </div>
+            
+            <div class="transaction-amount">
+              <div class="amount">
+                {{ transaction.type === 'income' ? '+' : '-' }}{{ transaction.amount | currency:'EUR':'symbol':'1.2-2':'de' }}
+              </div>
+            </div>
           </div>
 
           <div class="transaction-actions">
             <button 
               class="delete-btn" 
               (click)="deleteTransaction(transaction.id!)"
-              title="Transaktion löschen">
-              ❌
+              title="Löschen">
+              🗑️
             </button>
           </div>
         </div>
       </div>
     </section>
+
+    <!-- Empty State -->
+    <div class="empty-state" *ngIf="transactions.length === 0">
+      <div class="empty-content">
+        <div class="empty-icon">📊</div>
+        <h3>Keine Transaktionen</h3>
+        <p>Füge deine erste Transaktion hinzu</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Desktop/Tablet Layout -->
+  <div class="desktop-layout" *ngIf="!isMobile && !isLoading">
+    <div class="dashboard-content">
+      <!-- Transaction Form -->
+      <section class="form-section">
+        <app-transaction-form 
+          (transactionAdded)="onTransactionAdded()">
+        </app-transaction-form>
+      </section>
+
+      <!-- Chart Section -->
+      <section class="chart-section" *ngIf="chartData.length > 0">
+        <h2>📊 Finanzübersicht</h2>
+        <ngx-charts-bar-vertical
+          [results]="chartData"
+          [view]="view"
+          [showXAxisLabel]="true"
+          [showYAxisLabel]="true"
+          xAxisLabel="Kategorie"
+          yAxisLabel="Betrag (€)"
+          [animations]="true"
+          [gradient]="true"
+          [showGridLines]="true">
+        </ngx-charts-bar-vertical>
+      </section>
+
+      <!-- Transactions List -->
+      <section class="transactions-section" *ngIf="transactions.length > 0">
+        <h2>Letzte Transaktionen</h2>
+        <div class="transactions-list">
+          <div 
+            *ngFor="let transaction of transactions.slice(-10); trackBy: trackByTransactionId" 
+            class="transaction-item"
+            [class.income]="transaction.type === 'income'"
+            [class.expense]="transaction.type === 'expense'">
+            
+            <div class="transaction-info">
+              <span class="description">{{ transaction.description }}</span>
+              <span class="date">{{ transaction.date | date:'dd.MM.yyyy' }}</span>
+            </div>
+            
+            <div class="transaction-amount">
+              <span class="amount">
+                {{ transaction.type === 'income' ? '+' : '-' }}{{ transaction.amount | currency:'EUR':'symbol':'1.2-2':'de' }}
+              </span>
+              <span class="type">{{ transaction.type === 'income' ? 'Einnahme' : 'Ausgabe' }}</span>
+            </div>
+
+            <div class="transaction-actions">
+              <button 
+                class="delete-btn" 
+                (click)="deleteTransaction(transaction.id!)"
+                title="Transaktion löschen">
+                ❌
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <!-- Mobile FAB Button -->
+  <div class="mobile-fab" *ngIf="isMobile">
+    <button class="fab-button" (click)="toggleTransactionForm()">
+      <span class="fab-icon" [class.rotated]="showTransactionForm">
+        {{ showTransactionForm ? '✕' : '+' }}
+      </span>
+    </button>
+  </div>
+
+  <!-- Mobile Transaction Form Modal -->
+  <div class="mobile-modal" 
+       *ngIf="isMobile && showTransactionForm" 
+       (click)="showTransactionForm = false">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <button class="close-btn" (click)="showTransactionForm = false">✕</button>
+      </div>
+      <div class="modal-body">
+        <app-transaction-form (transactionAdded)="onTransactionAdded()"></app-transaction-form>
+      </div>
+    </div>
   </div>
 </div>

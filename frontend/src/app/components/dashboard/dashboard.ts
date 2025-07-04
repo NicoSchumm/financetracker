@@ -1,27 +1,78 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy, LOCALE_ID } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ApiService } from '../../services/api';
 import { TransactionFormComponent } from '../transaction-form/transaction-form'; 
 import { NgxChartsModule } from '@swimlane/ngx-charts';
 import { Transaction } from '../../models/transaction.interface';
+import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, TransactionFormComponent, NgxChartsModule], // TransactionListComponent entfernt
+  imports: [CommonModule, TransactionFormComponent, NgxChartsModule],
   templateUrl: './dashboard.html',
   styleUrls: ['./dashboard.scss'],
+  providers: [
+    { provide: LOCALE_ID, useValue: 'de' } // ← Deutsche Locale für diesen Component
+  ]
 })
-export class DashboardComponent implements OnInit {
+export class DashboardComponent implements OnInit, OnDestroy {
   chartData: any[] = [];
   transactions: Transaction[] = [];
-  view: [number, number] = [700, 400];
+  view: [number, number] = [350, 300];
   isLoading = false;
+  
+  isMobile = false;
+  isTablet = false;
+  showTransactionForm = false;
+  showChart = false;
+  
+  private destroy$ = new Subject<void>();
 
-  constructor(private apiService: ApiService) {}
+  constructor(
+    private apiService: ApiService,
+    private breakpointObserver: BreakpointObserver
+  ) {}
 
   ngOnInit(): void {
+    this.setupBreakpointObserver();
     this.loadTransactions();
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  private setupBreakpointObserver(): void {
+    // Mobile detection
+    this.breakpointObserver
+      .observe([Breakpoints.Handset])
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(result => {
+        this.isMobile = result.matches;
+        this.adjustChartSize();
+      });
+
+    this.breakpointObserver
+      .observe([Breakpoints.Tablet])
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(result => {
+        this.isTablet = result.matches;
+        this.adjustChartSize();
+      });
+  }
+
+  private adjustChartSize(): void {
+    if (this.isMobile) {
+      this.view = [320, 250];
+    } else if (this.isTablet) {
+      this.view = [500, 350];
+    } else {
+      this.view = [700, 400];
+    }
   }
 
   loadTransactions(): void {
@@ -61,28 +112,61 @@ export class DashboardComponent implements OnInit {
 
   onTransactionAdded(): void {
     this.loadTransactions();
-  }
-
-  onTransactionDeleted(): void {
-    this.loadTransactions();
+    if (this.isMobile) {
+      this.showTransactionForm = false;
+    }
   }
 
   trackByTransactionId(index: number, transaction: Transaction): number {
     return transaction.id || index;
   }
 
-  // Delete-Funktion hinzufügen
   deleteTransaction(id: number): void {
-    if (confirm('Möchtest du diese Transaktion wirklich löschen?')) {
+    const message = this.isMobile ? 
+      'Transaktion wirklich löschen?' : 
+      'Möchtest du diese Transaktion wirklich löschen?';
+      
+    if (confirm(message)) {
       this.apiService.deleteTransaction(id).subscribe({
         next: () => {
-          this.loadTransactions(); // Daten neu laden
+          this.loadTransactions();
         },
         error: (error) => {
           console.error('Fehler beim Löschen:', error);
-          alert('Fehler beim Löschen der Transaktion');
+          const errorMsg = this.isMobile ? 
+            'Fehler beim Löschen!' : 
+            'Fehler beim Löschen der Transaktion';
+          alert(errorMsg);
         }
       });
     }
+  }
+
+  toggleTransactionForm(): void {
+    this.showTransactionForm = !this.showTransactionForm;
+  }
+
+  toggleChart(): void {
+    this.showChart = !this.showChart;
+  }
+
+  getTotalIncome(): number {
+    return this.transactions
+      .filter(t => t.type === 'income')
+      .reduce((sum, t) => sum + t.amount, 0);
+  }
+
+  getTotalExpense(): number {
+    return this.transactions
+      .filter(t => t.type === 'expense')
+      .reduce((sum, t) => sum + t.amount, 0);
+  }
+
+  getBalance(): number {
+    return this.getTotalIncome() - this.getTotalExpense();
+  }
+
+  getTransactionIcon(type: string): string {
+    return type === 'income' ? '💰' : '💸';
   }
 }
