@@ -4,7 +4,7 @@ export interface Transaction {
   amount: number;
   date: Date;
   type: 'income' | 'expense';
-  category: string;
+  categoryId: string;
 }
 
 export interface Category {
@@ -15,14 +15,13 @@ export interface Category {
 }
 
 export const DEFAULT_CATEGORIES: Category[] = [
-  // Einnahmen
   { id: 'salary', name: 'Gehalt', icon: '💰', type: 'income' },
   { id: 'freelance', name: 'Freelancing', icon: '💻', type: 'income' },
   { id: 'investment', name: 'Investitionen', icon: '📈', type: 'income' },
   { id: 'gift', name: 'Geschenke', icon: '🎁', type: 'income' },
   { id: 'other-income', name: 'Sonstiges', icon: '💵', type: 'income' },
   
-  // Ausgaben
+ 
   { id: 'food', name: 'Lebensmittel', icon: '🛒', type: 'expense' },
   { id: 'transport', name: 'Transport', icon: '🚗', type: 'expense' },
   { id: 'housing', name: 'Wohnen', icon: '🏠', type: 'expense' },

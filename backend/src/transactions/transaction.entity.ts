@@ -18,4 +18,7 @@ export class Transaction {
 
   @Column() 
   type: TransactionType;
+
+  @Column({ nullable: true, default: '' })
+  categoryId: string;
 }

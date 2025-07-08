@@ -14,8 +14,17 @@ export class TransactionsService {
     return this.transactionsRepository.find();
   }
 
-  create(transaction: Transaction): Promise<Transaction> {
-    return this.transactionsRepository.save(transaction);
+  create(transaction: any): Promise<Transaction> {
+    // Explizites Setzen der categoryId, falls sie existiert
+    const newTransaction = this.transactionsRepository.create({
+      description: transaction.description,
+      amount: transaction.amount,
+      date: transaction.date,
+      type: transaction.type,
+      categoryId: transaction.categoryId || ''
+    });
+    
+    return this.transactionsRepository.save(newTransaction);
   }
 
   async remove(id: number): Promise<void> {

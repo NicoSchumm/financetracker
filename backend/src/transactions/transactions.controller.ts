@@ -12,7 +12,7 @@ export class TransactionsController {
   }
 
   @Post() 
-  create(@Body() transaction: Transaction) {
+  create(@Body() transaction: any) {
     return this.transactionsService.create(transaction);
   }
 

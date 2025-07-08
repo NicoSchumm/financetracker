@@ -18,7 +18,7 @@ export class TransactionFormComponent {
     description: '',
     amount: 0,
     type: 'expense' as 'income' | 'expense',
-    category: '',
+    categoryId: '',
     date: new Date().toISOString().split('T')[0]
   };
 
@@ -29,7 +29,7 @@ export class TransactionFormComponent {
 
   onTypeChange(type: 'income' | 'expense'): void {
     this.transaction.type = type;
-    this.transaction.category = '';
+    this.transaction.categoryId = '';
   }
 
   getAvailableCategories(): Category[] {
@@ -70,7 +70,7 @@ export class TransactionFormComponent {
   private isValidTransaction(): boolean {
     return this.transaction.description.trim() !== '' && 
            this.transaction.amount > 0 &&
-           this.transaction.category !== '';
+           this.transaction.categoryId !== '';
   }
 
   private resetForm(): void {
@@ -78,7 +78,7 @@ export class TransactionFormComponent {
       description: '',
       amount: 0,
       type: 'expense',
-      category: '',
+      categoryId: '',
       date: new Date().toISOString().split('T')[0]
     };
   }

@@ -32,8 +32,8 @@
           type="button"
           *ngFor="let category of getAvailableCategories()"
           class="category-btn"
-          [class.active]="transaction.category === category.id"
-          (click)="transaction.category = category.id">
+          [class.active]="transaction.categoryId === category.id"
+          (click)="transaction.categoryId = category.id">
           <span class="icon">{{ category.icon }}</span>
           <span class="name">{{ category.name }}</span>
         </button>
@@ -84,7 +84,7 @@
     <button 
       type="submit"
       class="submit-btn"
-      [disabled]="!transactionForm.valid || isSubmitting || !transaction.category"
+      [disabled]="!transactionForm.valid || isSubmitting || !transaction.categoryId"
       [class.loading]="isSubmitting">
       <span *ngIf="!isSubmitting">
         {{ transaction.type === 'income' ? '💰 Einnahme hinzufügen' : '💸 Ausgabe hinzufügen' }}
