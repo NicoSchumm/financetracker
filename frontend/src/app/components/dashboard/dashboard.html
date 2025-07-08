@@ -214,4 +214,137 @@
       </div>
     </div>
   </div>
+
+  <!-- Chart Section für Mobile -->
+  <div class="mobile-chart-section" *ngIf="isMobile">
+  
+    <!-- Monats-Dropdown -->
+    <div class="month-selector">
+      <label for="month-select">📅 Monat auswählen:</label>
+      <select 
+        id="month-select"
+        [(ngModel)]="selectedMonth" 
+        (change)="onMonthChange()"
+        class="month-dropdown">
+        <option *ngFor="let month of availableMonths" [value]="month.key">
+          {{ month.label }}
+        </option>
+      </select>
+    </div>
+
+    <!-- Monatliche Zusammenfassung -->
+    <div class="monthly-summary" *ngIf="currentMonthlyData">
+      <div class="summary-cards-mini">
+        <div class="mini-card income">
+          <span class="icon">💰</span>
+          <div class="details">
+            <span class="label">Einnahmen</span>
+            <span class="amount">{{ currentMonthlyData.income.toFixed(2) }}€</span>
+          </div>
+        </div>
+        
+        <div class="mini-card expense">
+          <span class="icon">💸</span>
+          <div class="details">
+            <span class="label">Ausgaben</span>
+            <span class="amount">{{ currentMonthlyData.expense.toFixed(2) }}€</span>
+          </div>
+        </div>
+        
+        <div class="mini-card balance" [class.positive]="currentMonthlyData.balance >= 0" [class.negative]="currentMonthlyData.balance < 0">
+          <span class="icon">{{ currentMonthlyData.balance >= 0 ? '📈' : '📉' }}</span>
+          <div class="details">
+            <span class="label">Saldo</span>
+            <span class="amount">{{ currentMonthlyData.balance.toFixed(2) }}€</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Chart -->
+    <div class="chart-container" *ngIf="chartData && chartData.length > 0">
+      <ngx-charts-bar-vertical
+        [results]="chartData"
+        [view]="view"
+        [scheme]="colorScheme"
+        [xAxis]="true"
+        [yAxis]="true"
+        [legend]="false"
+        [showXAxisLabel]="false"
+        [showYAxisLabel]="false"
+        [showDataLabel]="true"
+        [gradient]="false"
+        [barPadding]="20"
+        [animations]="true"
+        [roundDomains]="true"
+        [yScaleMin]="0"
+        (select)="onChartSelect($event)">
+      </ngx-charts-bar-vertical>
+    </div>
+
+    <!-- Fallback wenn keine Chart-Daten -->
+    <div class="no-chart-data" *ngIf="!chartData || chartData.length === 0">
+      <div class="empty-content">
+        <div class="empty-icon">📊</div>
+        <h3>Keine Daten</h3>
+        <p>Für diesen Monat sind keine Transaktionen vorhanden</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Transaktionen für ausgewählten Monat -->
+  <div class="mobile-transactions-section" *ngIf="isMobile">
+    <div class="section-header">
+      <h2>Transaktionen</h2>
+      <div class="transaction-count">
+        {{ currentMonthTransactions.length }}
+      </div>
+    </div>
+
+    <div class="mobile-transactions-list" *ngIf="currentMonthTransactions.length > 0; else monthlyEmptyState">
+      <div 
+        *ngFor="let transaction of currentMonthTransactions; trackBy: trackByTransactionId"
+        class="mobile-transaction-item"
+        [class.income]="transaction.type === 'income'"
+        [class.expense]="transaction.type === 'expense'">
+        
+        <div class="transaction-content">
+          <div class="transaction-icon">
+            {{ getCategoryInfo(transaction.category || '').icon }}
+          </div>
+          
+          <div class="transaction-details">
+            <span class="description">{{ transaction.description }}</span>
+            <span class="date">{{ transaction.date | date:'dd.MM.yyyy' }}</span>
+          </div>
+          
+          <div class="transaction-amount">
+            <span class="amount">
+              {{ transaction.type === 'income' ? '+' : '-' }}{{ transaction.amount.toFixed(2) }}€
+            </span>
+          </div>
+        </div>
+        
+        <div class="transaction-actions">
+          <button 
+            class="delete-btn"
+            (click)="deleteTransaction(transaction.id!)"
+            title="Löschen">
+            🗑️
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Empty State Template hinzufügen -->
+  <ng-template #monthlyEmptyState>
+    <div class="empty-state">
+      <div class="empty-content">
+        <div class="empty-icon">📅</div>
+        <h3>Keine Transaktionen</h3>
+        <p>Für diesen Monat wurden noch keine Transaktionen erfasst</p>
+      </div>
+    </div>
+  </ng-template>
 </div>

@@ -8,7 +8,7 @@
           type="button"
           class="type-btn"
           [class.active]="transaction.type === 'income'"
-          (click)="transaction.type = 'income'">
+          (click)="onTypeChange('income')">
           <span class="icon">💰</span>
           <span>Einnahme</span>
         </button>
@@ -17,9 +17,25 @@
           type="button"
           class="type-btn"
           [class.active]="transaction.type === 'expense'"
-          (click)="transaction.type = 'expense'">
+          (click)="onTypeChange('expense')">
           <span class="icon">💸</span>
           <span>Ausgabe</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Category Selection -->
+    <div class="form-group category-selection">
+      <label>Kategorie</label>
+      <div class="category-grid">
+        <button 
+          type="button"
+          *ngFor="let category of getAvailableCategories()"
+          class="category-btn"
+          [class.active]="transaction.category === category.id"
+          (click)="transaction.category = category.id">
+          <span class="icon">{{ category.icon }}</span>
+          <span class="name">{{ category.name }}</span>
         </button>
       </div>
     </div>
@@ -32,7 +48,7 @@
         id="description"
         name="description"
         [(ngModel)]="transaction.description"
-        placeholder="z.B. Einkauf, Gehalt, Miete..."
+        placeholder="z.B. Einkauf bei REWE, Monatsgehalt..."
         required
         class="form-input">
     </div>
@@ -68,7 +84,7 @@
     <button 
       type="submit"
       class="submit-btn"
-      [disabled]="!transactionForm.valid || isSubmitting"
+      [disabled]="!transactionForm.valid || isSubmitting || !transaction.category"
       [class.loading]="isSubmitting">
       <span *ngIf="!isSubmitting">
         {{ transaction.type === 'income' ? '💰 Einnahme hinzufügen' : '💸 Ausgabe hinzufügen' }}

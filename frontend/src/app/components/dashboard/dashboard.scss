@@ -205,46 +205,165 @@
 }
 
 // =============================================================================
-// CHART STYLES
+// MONTH SELECTOR STYLES
 // =============================================================================
 
-.chart-toggle-section {
+.month-selector {
   margin-bottom: 1rem;
-  .toggle-btn {
-    width: 100%;
-    background: var(--surface-color);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-lg);
-    padding: 0.75rem 1rem;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
+  
+  label {
+    display: block;
     font-size: 0.875rem;
     font-weight: 500;
     color: var(--text-primary);
+    margin-bottom: 0.5rem;
+  }
+  
+  .month-dropdown {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    background: var(--surface-color);
+    font-size: 1rem;
+    color: var(--text-primary);
     cursor: pointer;
     transition: all 0.2s ease;
-    &:hover {
-      background: var(--background-color);
+    
+    &:focus {
+      outline: none;
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
     }
-    &:active {
-      transform: scale(0.98);
-    }
-    .icon {
-      font-size: 1.25rem;
+    
+    option {
+      padding: 0.5rem;
     }
   }
 }
 
-.mobile-chart-section {
-  margin-bottom: 1.5rem;
-  .chart-container {
-    background: var(--surface-color);
-    border-radius: var(--radius-xl);
-    padding: 1rem;
-    box-shadow: var(--shadow-sm);
-    border: 1px solid var(--border-color);
-    overflow: hidden;
+// =============================================================================
+// MONTHLY SUMMARY STYLES
+// =============================================================================
+
+.monthly-summary {
+  margin-bottom: 1rem;
+  
+  .summary-cards-mini {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: 0.75rem;
+    
+    .mini-card {
+      background: var(--surface-color);
+      border-radius: var(--radius-lg);
+      padding: 0.75rem;
+      border: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: transform 0.2s ease;
+      
+      &:active {
+        transform: scale(0.98);
+      }
+      
+      .icon {
+        font-size: 1.5rem;
+      }
+      
+      .details {
+        flex: 1;
+        
+        .label {
+          display: block;
+          font-size: 0.75rem;
+          color: var(--text-secondary);
+          font-weight: 500;
+          margin-bottom: 0.125rem;
+        }
+        
+        .amount {
+          display: block;
+          font-size: 0.875rem;
+          font-weight: 600;
+          color: var(--text-primary);
+        }
+      }
+      
+      &.income {
+        border-left: 3px solid var(--success-color);
+        
+        .amount {
+          color: var(--success-color);
+        }
+      }
+      
+      &.expense {
+        border-left: 3px solid var(--danger-color);
+        
+        .amount {
+          color: var(--danger-color);
+        }
+      }
+      
+      &.balance {
+        grid-column: 1 / -1;
+        
+        &.positive {
+          border-left: 3px solid var(--success-color);
+          
+          .amount {
+            color: var(--success-color);
+          }
+        }
+        
+        &.negative {
+          border-left: 3px solid var(--danger-color);
+          
+          .amount {
+            color: var(--danger-color);
+          }
+        }
+      }
+    }
+  }
+}
+
+// =============================================================================
+// CHART STYLES
+// =============================================================================
+
+.chart-container {
+  background: var(--surface-color);
+  border-radius: var(--radius-xl);
+  padding: 1rem;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border-color);
+  overflow: hidden;
+  
+  // Chart-spezifische Anpassungen
+  ::ng-deep {
+    .bar {
+      cursor: pointer;
+    }
+    
+    .tick text {
+      font-size: 0.75rem;
+      fill: var(--text-secondary);
+    }
+    
+    .data-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      fill: var(--text-primary);
+    }
+    
+    .legend-labels {
+      font-size: 0.875rem;
+      fill: var(--text-primary);
+    }
   }
 }
 
@@ -358,7 +477,7 @@
       &.expense {
         border-left: 4px solid var(--danger-color);
         .transaction-amount .amount {
-          color: var, --danger-color;
+          color: var,--danger-color;
         }
       }
     }
@@ -387,6 +506,35 @@
       color: var(--text-primary);
       margin-bottom: 0.5rem;
     }
+    p {
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+      margin: 0;
+    }
+  }
+}
+
+.no-chart-data {
+  background: var(--surface-color);
+  border-radius: var(--radius-xl);
+  padding: 2rem 1rem;
+  text-align: center;
+  border: 1px solid var(--border-color);
+  margin: 1rem 0;
+  
+  .empty-content {
+    .empty-icon {
+      font-size: 2.5rem;
+      opacity: 0.5;
+      margin-bottom: 1rem;
+    }
+    
+    h3 {
+      font-size: 1rem;
+      color: var(--text-primary);
+      margin-bottom: 0.5rem;
+    }
+    
     p {
       font-size: 0.875rem;
       color: var(--text-secondary);

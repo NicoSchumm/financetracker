@@ -1,9 +1,11 @@
 import { Component, OnInit, OnDestroy, LOCALE_ID } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../services/api';
+import { ChartService, MonthlyData } from '../../services/chart.service';
 import { TransactionFormComponent } from '../transaction-form/transaction-form'; 
 import { NgxChartsModule } from '@swimlane/ngx-charts';
-import { Transaction } from '../../models/transaction.interface';
+import { Transaction, DEFAULT_CATEGORIES } from '../../models/transaction.interface';
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
@@ -11,11 +13,11 @@ import { takeUntil } from 'rxjs/operators';
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, TransactionFormComponent, NgxChartsModule],
+  imports: [CommonModule, FormsModule, TransactionFormComponent, NgxChartsModule],
   templateUrl: './dashboard.html',
   styleUrls: ['./dashboard.scss'],
   providers: [
-    { provide: LOCALE_ID, useValue: 'de' } // ← Deutsche Locale für diesen Component
+    { provide: LOCALE_ID, useValue: 'de' }
   ]
 })
 export class DashboardComponent implements OnInit, OnDestroy {
@@ -24,15 +26,27 @@ export class DashboardComponent implements OnInit, OnDestroy {
   view: [number, number] = [350, 300];
   isLoading = false;
   
+  // Chart-spezifische Properties
+  selectedMonth = '';
+  availableMonths: { key: string, label: string }[] = [];
+  currentMonthlyData: MonthlyData | null = null;
+  
   isMobile = false;
   isTablet = false;
   showTransactionForm = false;
   showChart = false;
   
   private destroy$ = new Subject<void>();
+  categories = DEFAULT_CATEGORIES;
+
+  // Chart Konfiguration - Stabilere Konfiguration
+  colorScheme: any = {
+    domain: ['#10b981', '#ef4444']
+  };
 
   constructor(
     private apiService: ApiService,
+    private chartService: ChartService,
     private breakpointObserver: BreakpointObserver
   ) {}
 
@@ -47,42 +61,32 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   private setupBreakpointObserver(): void {
-    // Mobile detection
-    this.breakpointObserver
-      .observe([Breakpoints.Handset])
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(result => {
-        this.isMobile = result.matches;
-        this.adjustChartSize();
-      });
-
-    this.breakpointObserver
-      .observe([Breakpoints.Tablet])
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(result => {
-        this.isTablet = result.matches;
-        this.adjustChartSize();
-      });
-  }
-
-  private adjustChartSize(): void {
-    if (this.isMobile) {
-      this.view = [320, 250];
-    } else if (this.isTablet) {
-      this.view = [500, 350];
-    } else {
-      this.view = [700, 400];
-    }
+    this.breakpointObserver.observe([
+      Breakpoints.XSmall,
+      Breakpoints.Small,
+      Breakpoints.Medium
+    ])
+    .pipe(takeUntil(this.destroy$))
+    .subscribe(result => {
+      this.isMobile = this.breakpointObserver.isMatched([Breakpoints.XSmall, Breakpoints.Small]);
+      this.isTablet = this.breakpointObserver.isMatched(Breakpoints.Medium);
+      
+      if (this.isMobile) {
+        this.view = [320, 250];
+      } else if (this.isTablet) {
+        this.view = [400, 300];
+      } else {
+        this.view = [500, 350];
+      }
+    });
   }
 
   loadTransactions(): void {
     this.isLoading = true;
     this.apiService.getTransactions().subscribe({
       next: (data) => {
-        this.transactions = data.sort((a, b) => 
-          new Date(b.date).getTime() - new Date(a.date).getTime()
-        );
-        this.updateChart();
+        this.transactions = data;
+        this.setupMonthlyData();
         this.isLoading = false;
       },
       error: (error) => {
@@ -92,56 +96,78 @@ export class DashboardComponent implements OnInit, OnDestroy {
     });
   }
 
-  updateChart(): void {
-    const totalIncome = this.transactions
-      .filter((t) => t.type === 'income')
-      .reduce((sum, t) => sum + parseFloat(t.amount.toString()), 0);
+  private setupMonthlyData(): void {
+    this.availableMonths = this.chartService.getAvailableMonths(this.transactions);
     
-    const totalExpense = this.transactions
-      .filter((t) => t.type === 'expense')
-      .reduce((sum, t) => sum + parseFloat(t.amount.toString()), 0);
-    
-    const balance = totalIncome - totalExpense;
-    
-    this.chartData = [
-      { name: 'Einnahmen', value: totalIncome },
-      { name: 'Ausgaben', value: totalExpense },
-      { name: 'Saldo', value: balance },
-    ];
-  }
-
-  onTransactionAdded(): void {
-    this.loadTransactions();
-    if (this.isMobile) {
-      this.showTransactionForm = false;
-    }
-  }
-
-  trackByTransactionId(index: number, transaction: Transaction): number {
-    return transaction.id || index;
-  }
-
-  deleteTransaction(id: number): void {
-    const message = this.isMobile ? 
-      'Transaktion wirklich löschen?' : 
-      'Möchtest du diese Transaktion wirklich löschen?';
+    if (this.availableMonths.length > 0) {
+      // Aktueller Monat oder erster verfügbarer Monat
+      const currentMonth = this.chartService.getCurrentMonth();
+      const monthExists = this.availableMonths.some(m => m.key === currentMonth);
       
-    if (confirm(message)) {
-      this.apiService.deleteTransaction(id).subscribe({
-        next: () => {
-          this.loadTransactions();
-        },
-        error: (error) => {
-          console.error('Fehler beim Löschen:', error);
-          const errorMsg = this.isMobile ? 
-            'Fehler beim Löschen!' : 
-            'Fehler beim Löschen der Transaktion';
-          alert(errorMsg);
-        }
-      });
+      this.selectedMonth = monthExists ? currentMonth : this.availableMonths[0].key;
+      this.updateChartForMonth();
     }
   }
 
+  onMonthChange(): void {
+    if (!this.selectedMonth) return;
+    
+    // Chart temporär ausblenden während Update
+    const oldChartData = this.chartData;
+    this.chartData = [];
+    
+    // Nach kurzer Verzögerung neue Daten setzen
+    setTimeout(() => {
+      this.updateChartForMonth();
+    }, 100);
+  }
+
+  private updateChartForMonth(): void {
+    if (!this.selectedMonth) return;
+    
+    try {
+      this.currentMonthlyData = this.chartService.getMonthlyData(this.transactions, this.selectedMonth);
+      const newChartData = this.chartService.getChartData(this.currentMonthlyData);
+      
+      // Validierung der Chart-Daten
+      const validChartData = newChartData.filter(item => 
+        item.value !== null && 
+        item.value !== undefined && 
+        !isNaN(item.value) && 
+        isFinite(item.value)
+      );
+      
+      this.chartData = validChartData;
+      
+    } catch (error) {
+      console.error('Fehler beim Update der Chart-Daten:', error);
+      this.chartData = [];
+    }
+  }
+
+  // Chart Event Handler
+  onChartSelect(event: any): void {
+    console.log('Chart selected:', event);
+  }
+
+  // Hilfsmethoden für Template
+  get totalIncome(): number {
+    return this.transactions
+      .filter(t => t.type === 'income')
+      .reduce((sum, t) => sum + t.amount, 0);
+  }
+
+  get totalExpense(): number {
+    return this.transactions
+      .filter(t => t.type === 'expense')
+      .reduce((sum, t) => sum + t.amount, 0);
+  }
+
+  get totalBalance(): number {
+    return this.totalIncome - this.totalExpense;
+  }
+
+  // Bestehende Methoden
   toggleTransactionForm(): void {
     this.showTransactionForm = !this.showTransactionForm;
   }
@@ -150,23 +176,61 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.showChart = !this.showChart;
   }
 
+  onTransactionAdded(): void {
+    this.loadTransactions();
+    this.showTransactionForm = false;
+  }
+
+  deleteTransaction(id: number): void {
+    if (confirm('Transaktion wirklich löschen?')) {
+      this.apiService.deleteTransaction(id).subscribe({
+        next: () => {
+          this.loadTransactions();
+        },
+        error: (error) => {
+          console.error('Fehler beim Löschen:', error);
+        }
+      });
+    }
+  }
+
+  getCategoryInfo(categoryId: string) {
+    return this.categories.find(cat => cat.id === categoryId) || 
+           { id: 'unknown', name: 'Unbekannt', icon: '❓', type: 'both' };
+  }
+
+  // Filtere Transaktionen für aktuellen Monat
+  get currentMonthTransactions(): Transaction[] {
+    if (!this.selectedMonth) return [];
+    
+    const [year, month] = this.selectedMonth.split('-').map(Number);
+    
+    return this.transactions.filter(transaction => {
+      const date = new Date(transaction.date);
+      return date.getFullYear() === year && date.getMonth() === month - 1;
+    });
+  }
+
+  // Fehlende Getter-Methoden hinzufügen
+  getBalance(): number {
+    return this.totalBalance;
+  }
+
   getTotalIncome(): number {
-    return this.transactions
-      .filter(t => t.type === 'income')
-      .reduce((sum, t) => sum + t.amount, 0);
+    return this.totalIncome;
   }
 
   getTotalExpense(): number {
-    return this.transactions
-      .filter(t => t.type === 'expense')
-      .reduce((sum, t) => sum + t.amount, 0);
+    return this.totalExpense;
   }
 
-  getBalance(): number {
-    return this.getTotalIncome() - this.getTotalExpense();
-  }
-
-  getTransactionIcon(type: string): string {
+  // Fehlende Icon-Methode
+  getTransactionIcon(type: 'income' | 'expense'): string {
     return type === 'income' ? '💰' : '💸';
+  }
+
+  // TrackBy Funktion für bessere Performance - Korrigiert
+  trackByTransactionId(index: number, transaction: Transaction): number {
+    return transaction.id || index;
   }
 }

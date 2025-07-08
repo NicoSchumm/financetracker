@@ -2,6 +2,7 @@ import { Component, EventEmitter, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../services/api';
+import { DEFAULT_CATEGORIES, Category } from '../../models/transaction.interface';
 
 @Component({
   selector: 'app-transaction-form',
@@ -17,18 +18,35 @@ export class TransactionFormComponent {
     description: '',
     amount: 0,
     type: 'expense' as 'income' | 'expense',
+    category: '',
     date: new Date().toISOString().split('T')[0]
   };
 
+  categories = DEFAULT_CATEGORIES;
   isSubmitting = false;
 
   constructor(private apiService: ApiService) {}
+
+  onTypeChange(type: 'income' | 'expense'): void {
+    this.transaction.type = type;
+    this.transaction.category = '';
+  }
+
+  getAvailableCategories(): Category[] {
+    return this.categories.filter(cat => 
+      cat.type === this.transaction.type || cat.type === 'both'
+    );
+  }
+
+  getCategoryIcon(categoryId: string): string {
+    const category = this.categories.find(cat => cat.id === categoryId);
+    return category?.icon || '📄';
+  }
 
   onSubmit(): void {
     if (this.isValidTransaction()) {
       this.isSubmitting = true;
       
-      // Date string zu Date object konvertieren
       const transactionData = {
         ...this.transaction,
         date: new Date(this.transaction.date)
@@ -51,7 +69,8 @@ export class TransactionFormComponent {
 
   private isValidTransaction(): boolean {
     return this.transaction.description.trim() !== '' && 
-           this.transaction.amount > 0;
+           this.transaction.amount > 0 &&
+           this.transaction.category !== '';
   }
 
   private resetForm(): void {
@@ -59,6 +78,7 @@ export class TransactionFormComponent {
       description: '',
       amount: 0,
       type: 'expense',
+      category: '',
       date: new Date().toISOString().split('T')[0]
     };
   }
