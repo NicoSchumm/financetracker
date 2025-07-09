@@ -2,9 +2,12 @@ export interface Transaction {
   id?: number;
   description: string;
   amount: number;
-  date: Date;
   type: 'income' | 'expense';
   categoryId: string;
+  date: Date;
+  isRecurring?: boolean;
+  recurringInterval?: string;
+  parentTransactionId?: number;
 }
 
 export interface Category {

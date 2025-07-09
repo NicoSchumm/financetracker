@@ -22,4 +22,8 @@ export class ApiService {
   deleteTransaction(id: number): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/${id}`);
   }
+
+  generateRecurringTransactions(): Observable<any> {
+    return this.http.post(`${this.apiUrl}/generate-recurring`, {});
+  }
 }

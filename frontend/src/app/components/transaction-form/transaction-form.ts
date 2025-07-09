@@ -4,6 +4,12 @@ import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../services/api';
 import { DEFAULT_CATEGORIES, Category } from '../../models/transaction.interface';
 
+export interface RecurringInterval {
+  id: string;
+  label: string;
+  icon: string;
+}
+
 @Component({
   selector: 'app-transaction-form',
   standalone: true,
@@ -19,17 +25,32 @@ export class TransactionFormComponent {
     amount: 0,
     type: 'expense' as 'income' | 'expense',
     categoryId: '',
-    date: new Date().toISOString().split('T')[0]
+    date: new Date().toISOString().split('T')[0],
+    isRecurring: false,
+    recurringInterval: ''
   };
 
   categories = DEFAULT_CATEGORIES;
   isSubmitting = false;
+
+  recurringIntervals: RecurringInterval[] = [
+    { id: 'daily', label: 'Täglich', icon: '📅' },
+    { id: 'weekly', label: 'Wöchentlich', icon: '📊' },
+    { id: 'monthly', label: 'Monatlich', icon: '🗓️' },
+    { id: 'yearly', label: 'Jährlich', icon: '📆' }
+  ];
 
   constructor(private apiService: ApiService) {}
 
   onTypeChange(type: 'income' | 'expense'): void {
     this.transaction.type = type;
     this.transaction.categoryId = '';
+  }
+
+  onRecurringToggle(): void {
+    if (!this.transaction.isRecurring) {
+      this.transaction.recurringInterval = '';
+    }
   }
 
   getAvailableCategories(): Category[] {
@@ -68,9 +89,15 @@ export class TransactionFormComponent {
   }
 
   private isValidTransaction(): boolean {
-    return this.transaction.description.trim() !== '' && 
-           this.transaction.amount > 0 &&
-           this.transaction.categoryId !== '';
+    const baseValid = this.transaction.description.trim() !== '' && 
+                     this.transaction.amount > 0 &&
+                     this.transaction.categoryId !== '';
+    
+    if (this.transaction.isRecurring) {
+      return baseValid && this.transaction.recurringInterval !== '';
+    }
+    
+    return baseValid;
   }
 
   private resetForm(): void {
@@ -79,7 +106,9 @@ export class TransactionFormComponent {
       amount: 0,
       type: 'expense',
       categoryId: '',
-      date: new Date().toISOString().split('T')[0]
+      date: new Date().toISOString().split('T')[0],
+      isRecurring: false,
+      recurringInterval: ''
     };
   }
 }

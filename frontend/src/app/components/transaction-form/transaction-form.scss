@@ -127,6 +127,116 @@
     }
   }
 
+  .form-section {
+    margin-bottom: 1.5rem;
+  }
+
+  .recurring-toggle {
+    margin-bottom: 1rem;
+  }
+
+  .toggle-container {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .toggle-input {
+    display: none;
+  }
+
+  .toggle-slider {
+    position: relative;
+    width: 50px;
+    height: 26px;
+    background-color: #ccc;
+    border-radius: 26px;
+    transition: background-color 0.2s ease;
+    margin-right: 12px;
+
+    &::before {
+      content: '';
+      position: absolute;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background-color: white;
+      top: 2px;
+      left: 2px;
+      transition: transform 0.2s ease;
+    }
+  }
+
+  .toggle-input:checked + .toggle-slider {
+    background-color: #4CAF50;
+
+    &::before {
+      transform: translateX(24px);
+    }
+  }
+
+  .toggle-label {
+    font-weight: 500;
+    color: #333;
+  }
+
+  .recurring-intervals {
+    animation: slideDown 0.3s ease-out;
+  }
+
+  .interval-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+  }
+
+  .interval-button {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 1rem 0.75rem;
+    border: 2px solid var(--border, #e5e7eb);
+    border-radius: 12px;
+    background: white;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-height: 80px;
+
+    &:hover {
+      border-color: var(--primary, #667eea);
+      background-color: rgba(102, 126, 234, 0.05);
+      transform: translateY(-2px);
+    }
+
+    &.selected {
+      border-color: var(--primary, #667eea);
+      background-color: rgba(102, 126, 234, 0.1);
+      color: var(--primary, #667eea);
+
+      .interval-icon {
+        transform: scale(1.1);
+      }
+    }
+
+    &:active {
+      transform: scale(0.98);
+    }
+  }
+
+  .interval-icon {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+    transition: transform 0.2s ease;
+  }
+
+  .interval-label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #333;
+    text-align: center;
+  }
+
   .submit-btn {
     width: 100%;
     padding: 1rem;
@@ -162,12 +272,22 @@
   }
 }
 
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
 }
 
-// Mobile Responsive
 @media (max-width: 480px) {
   .transaction-form {
     margin: 1rem;
@@ -188,6 +308,24 @@
         .name {
           font-size: 0.7rem;
         }
+      }
+    }
+
+    .interval-grid {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.5rem;
+    }
+
+    .interval-button {
+      padding: 0.75rem 0.5rem;
+      min-height: 70px;
+
+      .interval-icon {
+        font-size: 1.25rem;
+      }
+
+      .interval-label {
+        font-size: 0.8rem;
       }
     }
   }

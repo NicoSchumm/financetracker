@@ -26,7 +26,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
   view: [number, number] = [350, 300];
   isLoading = false;
   
-  // Chart-spezifische Properties
   selectedMonth = '';
   availableMonths: { key: string, label: string }[] = [];
   currentMonthlyData: MonthlyData | null = null;
@@ -37,22 +36,20 @@ export class DashboardComponent implements OnInit, OnDestroy {
   showChart = false;
   
   private destroy$ = new Subject<void>();
-  // Kategorien aus der Interface-Datei verwenden
   private categories: Category[] = DEFAULT_CATEGORIES;
 
-  // Verbesserte Chart Konfiguration mit besseren Farben
   colorScheme: any = {
     domain: [
-      '#10b981', // Modernes Grün für Einnahmen
-      '#ef4444'  // Modernes Rot für Ausgaben
+      '#10b981',
+      '#ef4444' 
     ]
   };
 
-  // Gradient-spezifische Konfiguration für erweiterte Visuals
+
   chartGradients = true;
   chartAnimations = true;
 
-  // Cache für Kategorie-Informationen
+
   private categoryInfoCache = new Map<string, { icon: string; label: string; color: string }>();
 
   constructor(
@@ -62,8 +59,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    this.setupBreakpointObserver();
+    this.checkScreenSize();
     this.loadTransactions();
+    this.generateRecurringTransactions(); 
   }
 
   ngOnDestroy(): void {
@@ -84,6 +82,22 @@ export class DashboardComponent implements OnInit, OnDestroy {
     });
   }
 
+  private checkScreenSize(): void {
+    this.setupBreakpointObserver();
+    
+    // Initiale Größe setzen
+    this.isMobile = this.breakpointObserver.isMatched([Breakpoints.XSmall, Breakpoints.Small]);
+    this.isTablet = this.breakpointObserver.isMatched(Breakpoints.Medium);
+    
+    // Chart-Größe basierend auf Bildschirmgröße anpassen
+    if (this.isMobile) {
+      this.view = [300, 200];
+    } else if (this.isTablet) {
+      this.view = [400, 250];
+    } else {
+      this.view = [500, 300];
+    }
+  }
 
   private loadTransactions(): void {
     this.isLoading = true;
@@ -142,7 +156,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
       this.currentMonthlyData = this.chartService.getMonthlyData(this.transactions, this.selectedMonth);
       const newChartData = this.chartService.getChartData(this.currentMonthlyData);
       
-      // Validierung der Chart-Daten
       const validChartData = newChartData.filter(item => 
         item.value !== null && 
         item.value !== undefined && 
@@ -158,17 +171,14 @@ export class DashboardComponent implements OnInit, OnDestroy {
     }
   }
 
-  // Chart Event Handler
   onChartSelect(event: any): void {
     console.log('Chart selected:', event);
   }
 
-  // Monats-Dropdown Handler
   onMonthChange(): void {
     this.updateChartForMonth();
   }
 
-  // Getter für Template-Verwendung
   get selectedMonthLabel(): string {
     if (!this.selectedMonth || !this.availableMonths) {
       return 'diesen Monat';
@@ -178,7 +188,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
     return monthData ? monthData.label : 'diesen Monat';
   }
 
-  // Hilfsmethoden für Template
   get totalIncome(): number {
     return this.transactions
       .filter((t: Transaction) => t.type === 'income')
@@ -195,7 +204,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
     return this.totalIncome - this.totalExpense;
   }
 
-  // Filtere Transaktionen für aktuellen Monat
   get currentMonthTransactions(): Transaction[] {
     if (!this.selectedMonth) return [];
     
@@ -207,17 +215,13 @@ export class DashboardComponent implements OnInit, OnDestroy {
     });
   }
 
-  // TrackBy Funktion für bessere Performance
   trackByTransactionId(index: number, transaction: Transaction): number {
     return transaction.id || index;
   }
 
-  // Optimierte Methode mit Caching
   getCategoryInfo(categoryKey: string): { icon: string; label: string; color: string } {
-    // Cache-Key erstellen (leere Strings werden als 'empty' gecacht)
     const cacheKey = categoryKey || 'empty';
     
-    // Prüfen ob bereits im Cache
     if (this.categoryInfoCache.has(cacheKey)) {
       return this.categoryInfoCache.get(cacheKey)!;
     }
@@ -227,7 +231,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
     if (!categoryKey || categoryKey.trim() === '') {
       result = { icon: '❓', label: 'Unbekannt', color: '#64748b' };
     } else {
-      // eslint-disable-next-line eqeqeq
       const category = this.categories.find((cat: Category) => cat.id == categoryKey);
       
       if (category) {
@@ -275,11 +278,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: () => {
-          // Transaktion aus lokaler Liste entfernen
           this.transactions = this.transactions.filter(t => t.id !== transactionId);
-          // Chart-Daten aktualisieren
           this.updateChartForMonth();
-          // Cache leeren da sich Daten geändert haben
           this.categoryInfoCache.clear();
         },
         error: (error) => {
@@ -288,16 +288,24 @@ export class DashboardComponent implements OnInit, OnDestroy {
       });
   }
 
-  // Methode die aufgerufen wird wenn eine neue Transaktion hinzugefügt wurde
   onTransactionAdded(): void {
-    // Transaktionen neu laden
     this.loadTransactions();
-    // Modal schließen
     this.showTransactionForm = false;
   }
 
-  // Methode zum Umschalten des Transaktionsformulars
   toggleTransactionForm(): void {
     this.showTransactionForm = !this.showTransactionForm;
+  }
+
+  private generateRecurringTransactions(): void {
+    this.apiService.generateRecurringTransactions().subscribe({
+      next: () => {
+        console.log('Wiederkehrende Transaktionen generiert');
+        this.loadTransactions();
+      },
+      error: (error) => {
+        console.error('Fehler beim Generieren wiederkehrender Transaktionen:', error);
+      }
+    });
   }
 }

@@ -80,6 +80,44 @@
         class="form-input">
     </div>
 
+    <!-- Recurring Transaction Section -->
+    <div class="form-section">
+      <div class="recurring-toggle">
+        <label class="toggle-container">
+          <input 
+            type="checkbox" 
+            [(ngModel)]="transaction.isRecurring"
+            (change)="onRecurringToggle()"
+            class="toggle-input"
+            name="isRecurring">
+          <span class="toggle-slider"></span>
+          <span class="toggle-label">Wiederkehrende Transaktion</span>
+        </label>
+      </div>
+
+      <!-- Recurring Interval Selection -->
+      <div class="recurring-intervals" *ngIf="transaction.isRecurring">
+        <div class="interval-grid">
+          <button
+            type="button"
+            *ngFor="let interval of recurringIntervals"
+            class="interval-button"
+            [class.selected]="transaction.recurringInterval === interval.id"
+            (click)="transaction.recurringInterval = interval.id">
+            <span class="interval-icon">{{ interval.icon }}</span>
+            <span class="interval-label">{{ interval.label }}</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Temporärer Debug-Code - füge das nach dem Toggle ein -->
+    <div>
+      <p>isRecurring: {{ transaction.isRecurring }}</p>
+      <p>recurringIntervals length: {{ recurringIntervals.length }}</p>
+      <pre>{{ recurringIntervals | json }}</pre>
+    </div>
+
     <!-- Submit Button -->
     <button 
       type="submit"

@@ -21,4 +21,13 @@ export class Transaction {
 
   @Column({ nullable: true, default: '' })
   categoryId: string;
+
+  @Column({ default: false })
+  isRecurring: boolean;
+
+  @Column({ nullable: true })
+  recurringInterval: string; 
+
+  @Column({ nullable: true })
+  parentTransactionId: number; 
 }
